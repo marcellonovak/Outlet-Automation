@@ -1,0 +1,66 @@
+/////////////////////////////////////////
+
+#include <TimeLib.h>
+#include <DS1307RTC.h>
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+#include "RTClib.h"
+RTC_DS1307 rtc;
+
+/////////////////////////////////////////
+
+const int relayPin = 6;
+bool lightState = false;
+int currentHour = 0;
+
+/////////////////////////////////////////
+
+void setup() {
+  pinMode(relayPin, OUTPUT);
+  
+  lcd.begin(); //initialize LCD
+  lcd.backlight();
+  
+  Serial.begin(57600);
+  
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__))); //set time to PC time
+  if (!rtc.begin()) { 
+    Serial.println("RTC is busted");
+  }
+}
+
+/////////////////////////////////////////
+
+void loop() {
+  DateTime currentTime = rtc.now();
+  currentHour = currentTime.hour();
+
+  Serial.print("Current Hour: " + String(currentTime.hour()) + "\n"); 
+
+  if (currentHour >= 7 && currentHour <= 22) {
+    lightState = true;
+  } 
+  else {
+    lightState = false;
+  }
+  
+  if (lightState == true) {
+    digitalWrite(relayPin, LOW);
+  }
+  else if (lightState == false) {
+    digitalWrite(relayPin, HIGH);
+  }
+  
+  String firstRow = "Current Time:", secondRow;
+  secondRow = WithLeadingZeros(currentTime.hour()) + ":" + WithLeadingZeros(currentTime.minute()) + ":" + WithLeadingZeros(currentTime.second());
+  
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(firstRow);
+  lcd.setCursor(0, 1);
+  lcd.print(secondRow);
+  delay(300);
+}
+
+/////////////////////////////////////////
